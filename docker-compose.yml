@@ -1,0 +1,20 @@
+services:
+  caption-worker:
+    build: .
+    image: naqafin-caption-worker:latest
+    env_file:
+      - .env
+    ports:
+      - "${WORKER_PORT:-8765}:8765"
+    gpus: all
+    volumes:
+      - ./storage:/app/storage
+      - ./models:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
