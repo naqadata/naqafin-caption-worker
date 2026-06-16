@@ -1,4 +1,19 @@
+import re
+
 from caption_worker.schemas import Segment, TranscriptResult
+
+
+FIRST_PERSON_PATTERN = re.compile(r"\bi(?:('|\u2019)(m|ve|ll|d))?\b", re.IGNORECASE)
+
+
+def normalize_caption_text(text: str) -> str:
+    def replace(match: re.Match[str]) -> str:
+        suffix = match.group(2)
+        if not suffix:
+            return "I"
+        return f"I'{suffix}"
+
+    return FIRST_PERSON_PATTERN.sub(replace, text)
 
 
 def format_timestamp(seconds: float, *, separator: str) -> str:
@@ -43,7 +58,7 @@ def normalize_segments(raw_segments: list[Segment]) -> list[Segment]:
     for index, segment in enumerate(raw_segments):
         start = max(0.0, segment.start)
         end = max(start, segment.end)
-        text = " ".join(segment.text.split())
+        text = normalize_caption_text(" ".join(segment.text.split()))
         if text:
             segments.append(Segment(id=index, start=start, end=end, text=text))
     return segments

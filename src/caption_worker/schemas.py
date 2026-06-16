@@ -50,6 +50,15 @@ class Segment(BaseModel):
     text: str
 
 
+class TranscriptionOptions(BaseModel):
+    vad_threshold: float = Field(default=0.35, ge=0.05, le=0.95)
+    enable_regrouping: bool = True
+    regroup_split_gap_seconds: float = Field(default=0.35, ge=0.1, le=2.0)
+    max_cue_characters: int = Field(default=84, ge=20, le=180)
+    max_cue_words: int = Field(default=14, ge=3, le=40)
+    max_cue_duration_seconds: float = Field(default=6.0, ge=1.0, le=15.0)
+
+
 class TranscriptResult(BaseModel):
     language: str | None = None
     duration: float | None = None

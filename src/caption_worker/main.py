@@ -8,7 +8,13 @@ from caption_worker.auth import require_api_key
 from caption_worker.config import Settings, get_settings
 from caption_worker.formatting import format_srt, format_txt, format_vtt
 from caption_worker.jobs import JobStore
-from caption_worker.schemas import HealthResponse, JobResponse, JobState, OutputFormat
+from caption_worker.schemas import (
+    HealthResponse,
+    JobResponse,
+    JobState,
+    OutputFormat,
+    TranscriptionOptions,
+)
 
 
 settings = get_settings()
@@ -53,14 +59,29 @@ async def create_job(
     model: Annotated[str | None, Form()] = None,
     language: Annotated[str | None, Form()] = None,
     output_format: Annotated[OutputFormat, Form()] = OutputFormat.vtt,
+    vad_threshold: Annotated[float, Form()] = 0.35,
+    enable_regrouping: Annotated[bool, Form()] = True,
+    regroup_split_gap_seconds: Annotated[float, Form()] = 0.35,
+    max_cue_characters: Annotated[int, Form()] = 84,
+    max_cue_words: Annotated[int, Form()] = 14,
+    max_cue_duration_seconds: Annotated[float, Form()] = 6.0,
     settings: Settings = Depends(get_settings),
 ) -> JobResponse:
     try:
+        options = TranscriptionOptions(
+            vad_threshold=vad_threshold,
+            enable_regrouping=enable_regrouping,
+            regroup_split_gap_seconds=regroup_split_gap_seconds,
+            max_cue_characters=max_cue_characters,
+            max_cue_words=max_cue_words,
+            max_cue_duration_seconds=max_cue_duration_seconds,
+        )
         job = await store.create_job(
             audio,
             model=(model or settings.whisper_model).strip(),
             language=(language or settings.whisper_language or "").strip() or None,
             output_format=output_format,
+            options=options,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc))

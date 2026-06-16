@@ -8,7 +8,13 @@ from uuid import uuid4
 from fastapi import UploadFile
 
 from caption_worker.config import Settings
-from caption_worker.schemas import JobResponse, JobState, OutputFormat, TranscriptResult
+from caption_worker.schemas import (
+    JobResponse,
+    JobState,
+    OutputFormat,
+    TranscriptionOptions,
+    TranscriptResult,
+)
 from caption_worker.transcribe import transcribe_audio
 
 
@@ -27,6 +33,7 @@ class CaptionJob:
     model: str
     language: str | None
     output_format: OutputFormat
+    options: TranscriptionOptions = field(default_factory=TranscriptionOptions)
     state: JobState = JobState.queued
     created_at: datetime = field(default_factory=utc_now)
     updated_at: datetime = field(default_factory=utc_now)
@@ -78,6 +85,7 @@ class JobStore:
         model: str,
         language: str | None,
         output_format: OutputFormat,
+        options: TranscriptionOptions | None = None,
     ) -> CaptionJob:
         job_id = uuid4().hex
         job_dir = self.settings.job_storage_dir / job_id
@@ -101,6 +109,7 @@ class JobStore:
             model=model,
             language=language,
             output_format=output_format,
+            options=options or TranscriptionOptions(),
         )
         async with self.lock:
             self.jobs[job_id] = job
@@ -149,6 +158,7 @@ class JobStore:
                 model_name=job.model,
                 language=job.language,
                 settings=self.settings,
+                options=job.options,
             )
         except Exception as exc:
             async with self.lock:
