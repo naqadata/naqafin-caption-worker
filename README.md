@@ -12,6 +12,8 @@ The Jellyfin plugin can upload extracted audio here, let this service run a larg
 
 This worker is optional. The Jellyfin plugin can still run local Whisper transcription without it, but this service is the preferred path when a separate host has a stronger CUDA GPU.
 
+The runtime stack is intentionally narrow: this service exposes a small HTTP API, runs `faster-whisper`, and stores temporary job files locally. It does not need Jellyfin credentials, Jellyfin media paths, or direct access to the Roku client.
+
 ## API
 
 Auth is optional. If `CAPTION_WORKER_API_KEY` is set, requests must include:
@@ -80,6 +82,14 @@ Fallback to local when unavailable: enabled
 
 The plugin uploads already-extracted audio chunks, so this worker does not need access to Jellyfin media paths or Jellyfin authentication.
 
+Naqafin Roku never calls this service directly. The request flow is:
+
+```text
+Naqafin Roku -> Jellyfin Auto Generate Captions plugin -> Naqafin Caption Worker
+```
+
+The worker returns caption text to the plugin, and the plugin serves live WebVTT back to Naqafin.
+
 ## Local Dev
 
 ```bash
@@ -96,3 +106,14 @@ The default runtime assumes CUDA. For CPU smoke tests, set:
 WHISPER_DEVICE=cpu
 WHISPER_COMPUTE_TYPE=int8
 ```
+
+## Systemd
+
+For a non-Docker host install, use the bundled helper and service template:
+
+```bash
+sudo ./scripts/install-systemd.sh /opt/naqafin-caption-worker
+sudo systemctl enable --now naqafin-caption-worker.service
+```
+
+Review `systemd/naqafin-caption-worker.service` and the environment variables in `.env.example` before enabling it on a production host.
