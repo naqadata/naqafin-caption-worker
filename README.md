@@ -12,7 +12,7 @@ The Jellyfin plugin can upload extracted audio here, let this service run a larg
 
 This worker is optional. The Jellyfin plugin can still run local Whisper transcription without it, but this service is the preferred path when a separate host has a stronger CUDA GPU.
 
-The runtime stack is intentionally narrow: this service exposes a small HTTP API, runs `faster-whisper`, and stores temporary job files locally. It does not need Jellyfin credentials, Jellyfin media paths, or direct access to the Roku client.
+The runtime stack is intentionally narrow: this service exposes a small HTTP API, runs `faster-whisper`, optionally restores punctuation with a local Hugging Face model, and stores temporary job files locally. It does not need Jellyfin credentials, Jellyfin media paths, or direct access to the Roku client.
 
 ## API
 
@@ -39,6 +39,8 @@ audio: uploaded audio/video file
 model: optional model override
 language: optional language hint, e.g. en
 output_format: vtt, srt, txt, or json
+enable_punctuation_restoration: optional boolean, defaults to true
+punctuation_model: optional Hugging Face model, defaults to oliverguhr/fullstop-punctuation-multilang-large
 ```
 
 ## Docker
@@ -77,8 +79,11 @@ In the Auto Generate Captions plugin settings, enable the remote worker and set:
 Remote worker URL: http://<worker-host>:8765
 Remote worker API key: value from CAPTION_WORKER_API_KEY, if configured
 Remote worker model: large-v3
+Use local punctuation model: enabled
 Fallback to local when unavailable: enabled
 ```
+
+The default punctuation model is `oliverguhr/fullstop-punctuation-multilang-large`. It runs locally in the worker process and may download model files on first use.
 
 The plugin uploads already-extracted audio chunks, so this worker does not need access to Jellyfin media paths or Jellyfin authentication.
 

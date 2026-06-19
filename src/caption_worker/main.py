@@ -65,6 +65,8 @@ async def create_job(
     max_cue_characters: Annotated[int, Form()] = 84,
     max_cue_words: Annotated[int, Form()] = 14,
     max_cue_duration_seconds: Annotated[float, Form()] = 6.0,
+    enable_punctuation_restoration: Annotated[bool, Form()] = True,
+    punctuation_model: Annotated[str, Form()] = "oliverguhr/fullstop-punctuation-multilang-large",
     settings: Settings = Depends(get_settings),
 ) -> JobResponse:
     try:
@@ -75,6 +77,8 @@ async def create_job(
             max_cue_characters=max_cue_characters,
             max_cue_words=max_cue_words,
             max_cue_duration_seconds=max_cue_duration_seconds,
+            enable_punctuation_restoration=enable_punctuation_restoration,
+            punctuation_model=punctuation_model.strip() or "oliverguhr/fullstop-punctuation-multilang-large",
         )
         job = await store.create_job(
             audio,

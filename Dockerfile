@@ -21,6 +21,8 @@ RUN pip3 install --no-cache-dir --upgrade pip \
 
 RUN mkdir -p /app/storage /models
 
+ENV HF_HOME=/models
+
 EXPOSE 8765
 
 CMD ["uvicorn", "caption_worker.main:app", "--host", "0.0.0.0", "--port", "8765"]
