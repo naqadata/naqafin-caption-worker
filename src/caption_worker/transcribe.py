@@ -1,16 +1,17 @@
 from functools import lru_cache
+import logging
 from pathlib import Path
 
 from faster_whisper import WhisperModel
 
 from caption_worker.config import Settings
 from caption_worker.formatting import normalize_segments
-from caption_worker.punctuation import DEFAULT_PUNCTUATION_MODEL, restore_punctuation
 from caption_worker.schemas import Segment, TranscriptionOptions, TranscriptResult, Word
 
 
 SENTENCE_PUNCTUATION = (".", "?", "!")
 SOFT_PUNCTUATION = (",", ";", ":")
+LOGGER = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=4)
@@ -47,6 +48,17 @@ def transcribe_audio(
     )
 
     raw_segments = list(segments_iter)
+    LOGGER.info(
+        "Whisper transcription complete: audio_path=%s model=%s language_hint=%s detected_language=%s "
+        "raw_segments=%d duration=%s enable_regrouping=%s",
+        audio_path,
+        model_name,
+        language,
+        getattr(info, "language", None),
+        len(raw_segments),
+        getattr(info, "duration", None),
+        options.enable_regrouping,
+    )
     if options.enable_regrouping:
         segments = regroup_segments(raw_segments, options)
     else:
@@ -62,11 +74,6 @@ def transcribe_audio(
         ]
 
     segments = normalize_segments(segments)
-    if options.enable_punctuation_restoration:
-        segments = restore_punctuation(
-            segments,
-            options.punctuation_model or DEFAULT_PUNCTUATION_MODEL,
-        )
 
     detected_language = getattr(info, "language", None)
     duration = getattr(info, "duration", None)
@@ -84,8 +91,6 @@ def transcribe_audio(
             "max_cue_characters": options.max_cue_characters,
             "max_cue_words": options.max_cue_words,
             "max_cue_duration_seconds": options.max_cue_duration_seconds,
-            "enable_punctuation_restoration": options.enable_punctuation_restoration,
-            "punctuation_model": options.punctuation_model,
         },
     )
 

@@ -64,8 +64,6 @@ class TranscriptionOptions(BaseModel):
     max_cue_characters: int = Field(default=84, ge=20, le=180)
     max_cue_words: int = Field(default=14, ge=3, le=40)
     max_cue_duration_seconds: float = Field(default=6.0, ge=1.0, le=15.0)
-    enable_punctuation_restoration: bool = True
-    punctuation_model: str = "oliverguhr/fullstop-punctuation-multilang-large"
 
 
 class TranscriptResult(BaseModel):

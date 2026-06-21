@@ -11,8 +11,6 @@ requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.111,<1",
     "faster-whisper>=1.1,<2",
-    "deepmultilingualpunctuation>=1.0,<2",
-    "transformers>=4.30,<5",
     "python-multipart>=0.0.9,<1",
     "pydantic-settings>=2.3,<3",
     "uvicorn[standard]>=0.30,<1",

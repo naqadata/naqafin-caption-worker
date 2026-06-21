@@ -6,7 +6,6 @@ from caption_worker.formatting import (
     normalize_caption_text,
     normalize_segments,
 )
-from caption_worker.punctuation import restore_punctuation_with_model
 from caption_worker.schemas import Segment, TranscriptResult, Word
 
 
@@ -60,49 +59,3 @@ def test_normalize_segments_preserves_word_timestamps() -> None:
         (1.35, 1.6, "run"),
         (4.4, 4.6, "you"),
     ]
-
-
-def test_restore_punctuation_updates_segment_text_and_words() -> None:
-    segments = [
-        Segment(
-            id=0,
-            start=1.0,
-            end=3.0,
-            text="hello there are you okay",
-            words=[
-                Word(start=1.0, end=1.2, text="hello"),
-                Word(start=1.3, end=1.5, text="there"),
-                Word(start=1.6, end=1.8, text="are"),
-                Word(start=1.9, end=2.1, text="you"),
-                Word(start=2.2, end=2.4, text="okay"),
-            ],
-        )
-    ]
-
-    restored = restore_punctuation_with_model(segments, FakePunctuationModel())
-
-    assert restored[0].text == "Hello there, are you okay?"
-    assert [word.text for word in restored[0].words] == [
-        "Hello",
-        "there,",
-        "are",
-        "you",
-        "okay?",
-    ]
-
-
-class FakePunctuationModel:
-    def preprocess(self, text: str) -> str:
-        return text
-
-    def predict(self, text: str) -> list[tuple[str, str, float]]:
-        return [
-            ("Hello", "0", 0.9),
-            ("there", ",", 0.9),
-            ("are", "0", 0.9),
-            ("you", "0", 0.9),
-            ("okay", "?", 0.9),
-        ]
-
-    def restore_punctuation(self, text: str) -> str:
-        return text

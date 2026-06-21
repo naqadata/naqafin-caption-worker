@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import shutil
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -16,6 +17,9 @@ from caption_worker.schemas import (
     TranscriptResult,
 )
 from caption_worker.transcribe import transcribe_audio
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def utc_now() -> datetime:
@@ -114,6 +118,22 @@ class JobStore:
         async with self.lock:
             self.jobs[job_id] = job
         await self.queue.put(job_id)
+        LOGGER.info(
+            "Caption job queued: job_id=%s model=%s language=%s output_format=%s bytes=%d "
+            "vad_threshold=%s enable_regrouping=%s regroup_split_gap_seconds=%s "
+            "max_cue_characters=%s max_cue_words=%s max_cue_duration_seconds=%s",
+            job.job_id,
+            job.model,
+            job.language,
+            job.output_format,
+            written,
+            job.options.vad_threshold,
+            job.options.enable_regrouping,
+            job.options.regroup_split_gap_seconds,
+            job.options.max_cue_characters,
+            job.options.max_cue_words,
+            job.options.max_cue_duration_seconds,
+        )
         return job
 
     async def get_job(self, job_id: str) -> CaptionJob | None:
@@ -151,6 +171,14 @@ class JobStore:
             job.started_at = utc_now()
             job.updated_at = job.started_at
 
+        LOGGER.info(
+            "Caption job started: job_id=%s model=%s language=%s audio_path=%s",
+            job.job_id,
+            job.model,
+            job.language,
+            job.audio_path,
+        )
+
         try:
             result = await asyncio.to_thread(
                 transcribe_audio,
@@ -166,6 +194,7 @@ class JobStore:
                 job.error = str(exc)
                 job.completed_at = utc_now()
                 job.updated_at = job.completed_at
+            LOGGER.exception("Caption job failed: job_id=%s model=%s", job_id, job.model)
             return
 
         async with self.lock:
@@ -173,3 +202,18 @@ class JobStore:
             job.state = JobState.succeeded
             job.completed_at = utc_now()
             job.updated_at = job.completed_at
+
+        elapsed_ms = None
+        if job.started_at and job.completed_at:
+            elapsed_ms = int((job.completed_at - job.started_at).total_seconds() * 1000)
+        LOGGER.info(
+            "Caption job succeeded: job_id=%s model=%s language=%s segments=%d duration=%s "
+            "elapsed_ms=%s metadata=%s",
+            job.job_id,
+            job.model,
+            result.language,
+            len(result.segments),
+            result.duration,
+            elapsed_ms,
+            result.metadata,
+        )
