@@ -8,7 +8,7 @@ The Jellyfin plugin can upload extracted audio here, let this service run a larg
 
 - [Jellyfin Plugin Auto Generate Captions](https://github.com/naqadata/jellyfin-plugin-auto-generate-captions): Jellyfin server plugin that extracts audio chunks and optionally submits them to this worker.
 - [Naqafin for Roku](https://github.com/naqadata/naqafin-roku): Roku client that starts generated-caption sessions and displays the live WebVTT stream from the Jellyfin plugin.
-- [Jellyfin Plugin Playlist Up Next](https://github.com/naqadata/jellyfin-plugin-playlist-up-next): separate companion plugin used by Naqafin for playlist-aware resume rows.
+- [Jellyfin Plugin Playlist Up Next](https://github.com/naqadata/jellyfin-plugin-playlist-up-next): separate companion plugin used by Naqafin for playlist-aware Continue Watching and Next Up content.
 
 This worker is optional. The Jellyfin plugin can still run local Whisper transcription without it, but this service is the preferred path when a separate host has a stronger CUDA GPU.
 
